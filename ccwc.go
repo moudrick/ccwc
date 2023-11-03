@@ -2,6 +2,7 @@ package main
 
 import (
     "bufio"
+    "flag"
     "fmt"
     "os"
     "unicode"
@@ -10,21 +11,32 @@ import (
 func main() {
     var file *os.File
     var err error
-	var filename string 
+    var filename string
+    var countChars, countWords, countLines bool
 
-    if len(os.Args) > 1 {
-        filename = os.Args[1]
-        if filename != "" {
-            file, err = os.Open(filename)
-            if err != nil {
-                fmt.Println("Error:", err)
-                os.Exit(2)
-            }
-            defer file.Close()
+    flag.BoolVar(&countChars, "c", false, "Count characters")
+    flag.BoolVar(&countWords, "w", false, "Count words")
+    flag.BoolVar(&countLines, "l", false, "Count lines")
+    flag.Parse()
+
+    if !countChars && !countWords && !countLines {
+        // If no flags provided, assume all flags are turned on
+        countChars = true
+        countWords = true
+        countLines = true
+    }
+
+    if len(flag.Args()) > 0 {
+        filename = flag.Args()[0]
+        file, err = os.Open(filename)
+        if err != nil {
+            fmt.Println("Error:", err)
+            os.Exit(2)
         }
+        defer file.Close()
     } else {
         file = os.Stdin
-		filename = ""
+        filename = ""
     }
 
     lines := 0
@@ -51,5 +63,14 @@ func main() {
         }
     }
 
-    fmt.Printf("%7d %7d %7d %s\n", lines, words, characters, filename)
+    if countLines {
+        fmt.Printf("%7d", lines)
+    }
+    if countWords {
+        fmt.Printf("%7d", words)
+    }
+    if countChars {
+        fmt.Printf("%7d", characters)
+    }
+    fmt.Printf(" %s\n", filename)
 }
