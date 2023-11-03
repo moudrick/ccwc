@@ -6,22 +6,24 @@ import (
     "fmt"
     "os"
     "unicode"
+	"unicode/utf8"
 )
 
 func main() {
     var file *os.File
     var err error
     var filename string
-    var countChars, countWords, countLines bool
+    var countBytes, countWords, countLines, countChars bool
 
-    flag.BoolVar(&countChars, "c", false, "Count characters")
+    flag.BoolVar(&countBytes, "c", false, "Count bytes")
     flag.BoolVar(&countWords, "w", false, "Count words")
     flag.BoolVar(&countLines, "l", false, "Count lines")
+	flag.BoolVar(&countChars, "m", false, "Count characters")
     flag.Parse()
 
-    if !countChars && !countWords && !countLines {
-        // If no flags provided, assume all flags are turned on
-        countChars = true
+    if !countBytes && !countWords && !countLines && !countChars {
+        // If no flags provided, assume three well known flags are turned on
+        countBytes = true
         countWords = true
         countLines = true
     }
@@ -42,7 +44,8 @@ func main() {
     lines := 0
     words := 0
     characters := 0
-    inWord := false
+    bytes := 0
+    inWord := false	
 
     scanner := bufio.NewScanner(file)
     scanner.Split(bufio.ScanRunes)
@@ -50,6 +53,9 @@ func main() {
     for scanner.Scan() {
         char := scanner.Text()
         characters++
+
+        byteCount := utf8.RuneCountInString(char)
+        bytes += byteCount
 
         if char == "\n" {
             lines++
@@ -68,6 +74,9 @@ func main() {
     }
     if countWords {
         fmt.Printf("%7d", words)
+    }
+	if countBytes {
+        fmt.Printf("%7d", bytes)
     }
     if countChars {
         fmt.Printf("%7d", characters)
