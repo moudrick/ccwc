@@ -10,17 +10,21 @@ import (
 func main() {
     var file *os.File
     var err error
+	var filename string 
 
     if len(os.Args) > 1 {
-        filename := os.Args[1]
-        file, err = os.Open(filename)
-        if err != nil {
-            fmt.Println("Error:", err)
-            os.Exit(2)
+        filename = os.Args[1]
+        if filename != "" {
+            file, err = os.Open(filename)
+            if err != nil {
+                fmt.Println("Error:", err)
+                os.Exit(2)
+            }
+            defer file.Close()
         }
-        defer file.Close()
     } else {
         file = os.Stdin
+		filename = ""
     }
 
     lines := 0
@@ -47,5 +51,5 @@ func main() {
         }
     }
 
-    fmt.Printf("Lines: %d\nWords: %d\nCharacters: %d\n", lines, words, characters)
+    fmt.Printf("%7d %7d %7d %s\n", lines, words, characters, filename)
 }
