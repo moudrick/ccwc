@@ -8,19 +8,20 @@ import (
 )
 
 func main() {
-    if len(os.Args) != 2 {
-        fmt.Println("Usage: go run wc.go <filename>")
-        os.Exit(1)
-    }
+    var file *os.File
+    var err error
 
-    filename := os.Args[1]
-
-    file, err := os.Open(filename)
-    if err != nil {
-        fmt.Println("Error:", err)
-        os.Exit(2)
+    if len(os.Args) > 1 {
+        filename := os.Args[1]
+        file, err = os.Open(filename)
+        if err != nil {
+            fmt.Println("Error:", err)
+            os.Exit(2)
+        }
+        defer file.Close()
+    } else {
+        file = os.Stdin
     }
-    defer file.Close()
 
     lines := 0
     words := 0
