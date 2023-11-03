@@ -6,8 +6,42 @@ import (
     "fmt"
     "os"
     "unicode"
-	"unicode/utf8"
 )
+
+type CountingReader struct {
+    Reader   *os.File
+    ByteCount int
+}
+
+func (cr *CountingReader) Read(p []byte) (n int, err error) {
+    n, err = cr.Reader.Read(p)
+    cr.ByteCount += n
+    return n, err
+}
+
+func CountNonBytes(scanner *bufio.Scanner) (int, int, int) {
+    lines := 0
+    words := 0
+    characters := 0
+    inWord := false
+
+    for scanner.Scan() {
+        char := scanner.Text()
+        characters++
+
+        if char == "\n" {
+            lines++
+        }
+
+        if unicode.IsSpace([]rune(char)[0]) {
+            inWord = false
+        } else if !inWord {
+            inWord = true
+            words++
+        }
+    }
+    return characters, lines, words
+}
 
 func main() {
     var file *os.File
@@ -18,7 +52,7 @@ func main() {
     flag.BoolVar(&countBytes, "c", false, "Count bytes")
     flag.BoolVar(&countWords, "w", false, "Count words")
     flag.BoolVar(&countLines, "l", false, "Count lines")
-	flag.BoolVar(&countChars, "m", false, "Count characters")
+    flag.BoolVar(&countChars, "m", false, "Count characters")
     flag.Parse()
 
     if !countBytes && !countWords && !countLines && !countChars {
@@ -41,45 +75,23 @@ func main() {
         filename = ""
     }
 
-    lines := 0
-    words := 0
-    characters := 0
-    bytes := 0
-    inWord := false	
-
-    scanner := bufio.NewScanner(file)
+    countingReader := &CountingReader{Reader: file}
+    scanner := bufio.NewScanner(countingReader)
     scanner.Split(bufio.ScanRunes)
-
-    for scanner.Scan() {
-        char := scanner.Text()
-        characters++
-
-        byteCount := utf8.RuneCountInString(char)
-        bytes += byteCount
-
-        if char == "\n" {
-            lines++
-        }
-
-        if unicode.IsSpace([]rune(char)[0]) {
-            inWord = false
-        } else if !inWord {
-            inWord = true
-            words++
-        }
-    }
+    characters, lines, words := CountNonBytes(scanner)
+    totalByteCount :=  countingReader.ByteCount
 
     if countLines {
         fmt.Printf("%7d", lines)
     }
     if countWords {
-        fmt.Printf("%7d", words)
-    }
-	if countBytes {
-        fmt.Printf("%7d", bytes)
+        fmt.Printf("%8d", words)
     }
     if countChars {
-        fmt.Printf("%7d", characters)
+        fmt.Printf("%8d", characters)
+    }
+    if countBytes {
+        fmt.Printf("%8d", totalByteCount)
     }
     fmt.Printf(" %s\n", filename)
 }
